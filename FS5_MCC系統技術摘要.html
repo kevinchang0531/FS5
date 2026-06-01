@@ -1,0 +1,926 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FS5 MCC 系統技術摘要 — 國家太空中心</title>
+  <style>
+    /* ── Base Reset ─────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: "微軟正黑體", "Microsoft JhengHei", Arial, sans-serif;
+      font-size: 14px;
+      background: #f4f6f9;
+      color: #1a1a1a;
+      line-height: 1.6;
+    }
+
+    /* ── TASA Color Tokens ──────────────────────── */
+    :root {
+      --navy:    #003087;
+      --navy-dk: #001d57;
+      --navy-lt: #2255aa;
+      --white:   #ffffff;
+      --black:   #111111;
+      --red:     #c0392b;
+      --green:   #27ae60;
+      --orange:  #e67e22;
+      --lblue:   #2980b9;
+      --gray-lt: #ecf0f4;
+      --gray-md: #b0bec5;
+      --border:  #cfd8dc;
+    }
+
+    /* ── Page Header ────────────────────────────── */
+    .page-header {
+      background: var(--navy);
+      color: var(--white);
+      padding: 0;
+    }
+    .page-header__bar {
+      display: flex;
+      align-items: center;
+      padding: 18px 40px;
+      gap: 20px;
+    }
+    .page-header__logo {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      border-right: 2px solid rgba(255,255,255,0.4);
+      padding-right: 20px;
+      white-space: nowrap;
+    }
+    .page-header__title {
+      font-size: 16px;
+      font-weight: 400;
+      letter-spacing: 1px;
+    }
+    .page-header__meta {
+      margin-left: auto;
+      text-align: right;
+      font-size: 11px;
+      opacity: 0.7;
+      line-height: 1.8;
+    }
+    .page-header__divider {
+      height: 4px;
+      background: linear-gradient(90deg, var(--lblue) 0%, var(--green) 50%, var(--orange) 100%);
+    }
+
+    /* ── Document Info Banner ───────────────────── */
+    .doc-banner {
+      background: var(--navy-dk);
+      color: var(--white);
+      padding: 12px 40px;
+      display: flex;
+      gap: 40px;
+      font-size: 12px;
+      opacity: 0.95;
+    }
+    .doc-banner span { color: var(--gray-md); }
+    .doc-banner strong { color: var(--white); }
+
+    /* ── Layout ─────────────────────────────────── */
+    .container {
+      max-width: 1100px;
+      margin: 30px auto;
+      padding: 0 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    /* ── Section Card ───────────────────────────── */
+    .section {
+      background: var(--white);
+      border-top: 4px solid var(--navy);
+    }
+    .section__header {
+      background: var(--navy);
+      color: var(--white);
+      padding: 10px 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .section__num {
+      background: var(--lblue);
+      color: var(--white);
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 8px;
+      letter-spacing: 1px;
+    }
+    .section__title {
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: 1px;
+    }
+    .section__sub {
+      font-size: 11px;
+      opacity: 0.7;
+      margin-left: auto;
+    }
+    .section__body {
+      padding: 20px;
+    }
+
+    /* ── Stage Timeline ─────────────────────────── */
+    .timeline {
+      display: flex;
+      gap: 0;
+      border: 1px solid var(--border);
+    }
+    .timeline__stage {
+      flex: 1;
+      padding: 14px 12px;
+      border-right: 1px solid var(--border);
+      position: relative;
+    }
+    .timeline__stage:last-child { border-right: none; }
+    .timeline__stage--active .stage-num { background: var(--navy); }
+    .stage-num {
+      display: inline-block;
+      background: var(--gray-md);
+      color: var(--white);
+      font-size: 10px;
+      font-weight: 700;
+      padding: 1px 6px;
+      margin-bottom: 6px;
+    }
+    .stage-date {
+      font-size: 10px;
+      color: var(--lblue);
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+    .stage-title {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--navy);
+      margin-bottom: 4px;
+    }
+    .stage-cdrl {
+      font-size: 10px;
+      color: #666;
+      line-height: 1.5;
+    }
+
+    /* ── Architecture Diagram (CSS) ─────────────── */
+    .arch-grid {
+      display: grid;
+      grid-template-columns: 1fr 2fr 1fr;
+      gap: 12px;
+      align-items: start;
+    }
+    .arch-col { display: flex; flex-direction: column; gap: 8px; }
+    .arch-box {
+      border: 2px solid var(--navy);
+      padding: 10px 14px;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--white);
+      background: var(--navy);
+      text-align: center;
+    }
+    .arch-box--lblue { background: var(--lblue); border-color: var(--lblue); }
+    .arch-box--green { background: var(--green); border-color: var(--green); }
+    .arch-box--orange { background: var(--orange); border-color: var(--orange); }
+    .arch-box--outline {
+      background: var(--white);
+      color: var(--navy);
+      border: 2px solid var(--navy);
+    }
+    .arch-box--outline-sm {
+      background: var(--white);
+      color: #333;
+      border: 1px solid var(--border);
+      font-weight: 400;
+      font-size: 11px;
+    }
+    .arch-box sub {
+      display: block;
+      font-size: 10px;
+      font-weight: 400;
+      opacity: 0.85;
+      margin-top: 2px;
+    }
+    .arch-center {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .arch-center__main {
+      border: 3px solid var(--navy);
+      padding: 16px;
+      background: var(--gray-lt);
+      text-align: center;
+    }
+    .arch-center__main h3 {
+      font-size: 14px;
+      color: var(--navy);
+      margin-bottom: 10px;
+    }
+    .arch-modules {
+      display: flex;
+      gap: 6px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .arch-module {
+      padding: 6px 10px;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--white);
+    }
+    .arch-module--prm  { background: var(--lblue); }
+    .arch-module--tofa { background: var(--orange); }
+    .arch-module--mpss { background: var(--navy); }
+    .arch-arrow {
+      text-align: center;
+      font-size: 20px;
+      color: var(--navy-lt);
+      line-height: 1;
+      padding: 4px 0;
+    }
+    .arch-db {
+      display: flex;
+      gap: 6px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-top: 6px;
+    }
+    .arch-db-item {
+      border: 1px solid var(--border);
+      padding: 4px 10px;
+      font-size: 10px;
+      background: var(--white);
+      color: var(--navy);
+      font-weight: 700;
+    }
+
+    /* ── Interface Table ─────────────────────────── */
+    .iface-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+    .iface-table th {
+      background: var(--navy);
+      color: var(--white);
+      padding: 8px 12px;
+      text-align: left;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+    .iface-table td {
+      padding: 7px 12px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: top;
+    }
+    .iface-table tr:nth-child(even) td { background: var(--gray-lt); }
+    .tag {
+      display: inline-block;
+      padding: 1px 6px;
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--white);
+      margin-right: 3px;
+    }
+    .tag--in  { background: var(--green); }
+    .tag--out { background: var(--orange); }
+    .tag--bi  { background: var(--lblue); }
+
+    /* ── Function Grid ───────────────────────────── */
+    .func-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .func-card {
+      border: 1px solid var(--border);
+      background: var(--white);
+    }
+    .func-card__head {
+      padding: 8px 14px;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--white);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .func-card__head--navy   { background: var(--navy); }
+    .func-card__head--lblue  { background: var(--lblue); }
+    .func-card__head--green  { background: var(--green); }
+    .func-card__head--orange { background: var(--orange); }
+    .func-card__body { padding: 10px 14px; }
+
+    /* ── Bullet List ─────────────────────────────── */
+    .blist { list-style: none; padding: 0; }
+    .blist li {
+      padding: 3px 0 3px 18px;
+      position: relative;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+    .blist li::before {
+      content: "◆";
+      position: absolute;
+      left: 0;
+      font-size: 8px;
+      top: 5px;
+    }
+    .blist--navy  li::before { color: var(--navy); }
+    .blist--lblue li::before { color: var(--lblue); }
+    .blist--green li::before { color: var(--green); }
+    .blist--orange li::before { color: var(--orange); }
+    .blist--red   li::before { color: var(--red); }
+
+    .blist li .sub-item {
+      display: block;
+      padding-left: 14px;
+      font-size: 11px;
+      color: #555;
+    }
+    .blist li .sub-item::before {
+      content: "▸ ";
+      color: var(--gray-md);
+    }
+
+    /* ── Tech Stack Grid ─────────────────────────── */
+    .tech-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+    .tech-item {
+      border-left: 4px solid var(--navy);
+      padding: 10px 14px;
+      background: var(--gray-lt);
+    }
+    .tech-item--lblue  { border-color: var(--lblue); }
+    .tech-item--green  { border-color: var(--green); }
+    .tech-item--orange { border-color: var(--orange); }
+    .tech-item--red    { border-color: var(--red); }
+    .tech-item--navy   { border-color: var(--navy); }
+    .tech-item__name {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--navy);
+      margin-bottom: 4px;
+    }
+    .tech-item__desc {
+      font-size: 11px;
+      color: #444;
+      line-height: 1.5;
+    }
+
+    /* ── HW Spec Table ───────────────────────────── */
+    .hw-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 11px;
+    }
+    .hw-table th {
+      background: var(--navy-dk);
+      color: var(--white);
+      padding: 6px 10px;
+      text-align: left;
+    }
+    .hw-table td {
+      padding: 5px 10px;
+      border-bottom: 1px solid var(--border);
+    }
+    .hw-table tr:nth-child(even) td { background: var(--gray-lt); }
+
+    /* ── Footer ──────────────────────────────────── */
+    .page-footer {
+      background: var(--navy-dk);
+      color: rgba(255,255,255,0.6);
+      text-align: center;
+      font-size: 11px;
+      padding: 14px 40px;
+      margin-top: 20px;
+      letter-spacing: 0.5px;
+    }
+
+    /* ── Emphasis ─────────────────────────────────── */
+    .kw { color: var(--red); font-weight: 700; }
+    .note {
+      border-left: 3px solid var(--orange);
+      padding: 6px 12px;
+      background: #fff8f0;
+      font-size: 11px;
+      color: #555;
+      margin-top: 10px;
+    }
+    .divider {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 12px 0;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════
+     PAGE HEADER
+════════════════════════════════════════ -->
+<header class="page-header">
+  <div class="page-header__bar">
+    <div class="page-header__logo">TASA／國家太空中心</div>
+    <div class="page-header__title">衛星多重任務及星系操作系統整合軟體（MCC）— 系統技術摘要</div>
+    <div class="page-header__meta">
+      文件：MCC-CDRL-017/018/019/021（最終版）<br>
+      計畫編號：TASA-P-101080<br>
+      執行期間：2013-01 ～ 2015-06
+    </div>
+  </div>
+  <div class="page-header__divider"></div>
+</header>
+
+<!-- ══════════════════════════════════════
+     DOC BANNER
+════════════════════════════════════════ -->
+<div class="doc-banner">
+  <div><span>承攬廠商：</span><strong>Advanced Control and Systems, Inc.（ACS）</strong></div>
+  <div><span>涵蓋衛星：</span><strong>FORMOSAT-5</strong></div>
+</div>
+
+<!-- ══════════════════════════════════════
+     MAIN CONTENT
+════════════════════════════════════════ -->
+<div class="container">
+
+  <!-- ─────────────────────────────────────
+       SECTION 1：開發流程
+  ──────────────────────────────────────── -->
+  <div class="section">
+    <div class="section__header">
+      <span class="section__num">01</span>
+      <span class="section__title">開發流程（Development Lifecycle）</span>
+      <span class="section__sub">7 個里程碑階段 ／ 2013-01 → 2015-06</span>
+    </div>
+    <div class="section__body">
+      <div class="timeline">
+
+        <div class="timeline__stage timeline__stage--active">
+          <div class="stage-num">Phase 1</div>
+          <div class="stage-date">2013-01</div>
+          <div class="stage-title">系統設計審核</div>
+          <div class="stage-cdrl">
+            CDRL-001 系統設計審核報告<br>
+            CDRL-002 系統設計文件<br>
+            CDRL-003 控制界面文件
+          </div>
+        </div>
+
+        <div class="timeline__stage">
+          <div class="stage-num">Phase 2</div>
+          <div class="stage-date">2013-03</div>
+          <div class="stage-title">關鍵設計審核</div>
+          <div class="stage-cdrl">
+            CDRL-004 關鍵設計審核報告<br>
+            CDRL-005 PRM/TOFA/MPSS 操作規則<br>
+            CDRL-006 資料庫設計文件
+          </div>
+        </div>
+
+        <div class="timeline__stage">
+          <div class="stage-num">Phase 3</div>
+          <div class="stage-date">2013-10</div>
+          <div class="stage-title">原型系統開發</div>
+          <div class="stage-cdrl">
+            CDRL-007 原型系統開發測試審核<br>
+            CDRL-008 功能驗收與測試<br>
+            CDRL-009 系統架構功能說明
+          </div>
+        </div>
+
+        <div class="timeline__stage">
+          <div class="stage-num">Phase 4</div>
+          <div class="stage-date">2014-02</div>
+          <div class="stage-title">更新系統整合測試</div>
+          <div class="stage-cdrl">
+            CDRL-010 更新系統整合測試審核<br>
+            CDRL-011 功能驗收與測試
+          </div>
+        </div>
+
+        <div class="timeline__stage">
+          <div class="stage-num">Phase 5</div>
+          <div class="stage-date">2014-08</div>
+          <div class="stage-title">二次更新整合</div>
+          <div class="stage-cdrl">
+            CDRL-012 更新系統整合測試審核<br>
+            CDRL-013 功能驗收與測試
+          </div>
+        </div>
+
+        <div class="timeline__stage">
+          <div class="stage-num">Phase 6</div>
+          <div class="stage-date">2015-01</div>
+          <div class="stage-title">原型系統審查</div>
+          <div class="stage-cdrl">
+            CDRL-014 整合測試審核報告<br>
+            CDRL-015 功能驗收與測試
+          </div>
+        </div>
+
+        <div class="timeline__stage">
+          <div class="stage-num">Phase 7</div>
+          <div class="stage-date">2015-06</div>
+          <div class="stage-title">系統結案交付</div>
+          <div class="stage-cdrl">
+            CDRL-016 結案審核報告<br>
+            CDRL-017~023 最終版全套文件<br>
+            軟體保固證明書
+          </div>
+        </div>
+
+      </div><!-- end timeline -->
+
+    </div>
+  </div><!-- end section 1 -->
+
+
+  <!-- ─────────────────────────────────────
+       SECTION 2：系統架構
+  ──────────────────────────────────────── -->
+  <div class="section">
+    <div class="section__header">
+      <span class="section__num">02</span>
+      <span class="section__title">系統架構（System Architecture）</span>
+      <span class="section__sub">三層分層軟體架構 + SOCC 整合</span>
+    </div>
+    <div class="section__body">
+
+      <div class="arch-grid">
+
+        <!-- Left col: External inputs -->
+        <div class="arch-col">
+          <div style="font-size:11px;font-weight:700;color:var(--navy);margin-bottom:4px;">外部系統輸入</div>
+          <div class="arch-box arch-box--outline-sm">FDF<sub>飛行動力設施</sub></div>
+          <div class="arch-box arch-box--outline-sm">RSI / PSS<sub>遙感影像計畫排程</sub></div>
+          <div class="arch-box arch-box--outline-sm">AIP SDDC<sub>資料發布中心</sub></div>
+          <div class="arch-box arch-box--outline-sm">CWB<sub>中央氣象局</sub></div>
+          <div class="arch-box arch-box--outline-sm">Customer<sub>影像程序請求</sub></div>
+        </div>
+
+        <!-- Center col: MCC core -->
+        <div class="arch-center">
+          <div style="font-size:11px;font-weight:700;color:var(--navy);margin-bottom:4px;text-align:center;">MCC 核心系統</div>
+          <div class="arch-center__main">
+            <h3>Mission Control Center (MCC)</h3>
+            <div class="arch-modules">
+              <div class="arch-module arch-module--prm">PRM<br><small style="font-weight:400;font-size:9px;">Programming Request Mgr</small></div>
+              <div class="arch-module arch-module--tofa">TOFA<br><small style="font-weight:400;font-size:9px;">Feasibility Assessor</small></div>
+              <div class="arch-module arch-module--mpss">MPSS<br><small style="font-weight:400;font-size:9px;">Mission Planning &amp; Scheduling</small></div>
+            </div>
+            <div class="arch-arrow">↕</div>
+            <div style="font-size:11px;color:#555;margin-bottom:6px;">資料持久層</div>
+            <div class="arch-db">
+              <div class="arch-db-item">PostgreSQL</div>
+              <div class="arch-db-item">PostGIS</div>
+              <div class="arch-db-item">RAID SAN</div>
+            </div>
+          </div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:11px;">
+            <div class="arch-box arch-box--outline-sm" style="text-align:center;">
+              <strong>RIA Web Client</strong><br>
+              <span style="font-size:10px;color:#666;">Rich Internet Application<br>瀏覽器前端介面</span>
+            </div>
+            <div class="arch-box arch-box--outline-sm" style="text-align:center;">
+              <strong>OGC SPS Web Service</strong><br>
+              <span style="font-size:10px;color:#666;">標準化感測器規劃服務<br>對外 REST/WS API</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right col: External outputs -->
+        <div class="arch-col">
+          <div style="font-size:11px;font-weight:700;color:var(--navy);margin-bottom:4px;">外部系統輸出</div>
+          <div class="arch-box arch-box--outline-sm">MOC<sub>任務操作中心</sub></div>
+          <div class="arch-box arch-box--outline-sm">RTS<sub>即時遙測系統</sub></div>
+          <div class="arch-box arch-box--outline-sm">CSRSR<sub>遙測科學研究中心</sub></div>
+          <div class="arch-box arch-box--outline-sm">Acquisition Schedule<sub>解析後排程計畫</sub></div>
+          <div class="arch-box arch-box--outline-sm">Command Loads<sub>上傳指令封包</sub></div>
+        </div>
+
+      </div><!-- end arch-grid -->
+
+
+    </div>
+  </div><!-- end section 2 -->
+
+
+  <!-- ─────────────────────────────────────
+       SECTION 3：資料交換介面
+  ──────────────────────────────────────── -->
+  <div class="section">
+    <div class="section__header">
+      <span class="section__num">03</span>
+      <span class="section__title">資料交換介面（Interface Control — CDRL-018）</span>
+      <span class="section__sub">MCC ↔ SOCC 各子系統</span>
+    </div>
+    <div class="section__body">
+
+      <table class="iface-table">
+        <thead>
+          <tr>
+            <th style="width:18%">資料流</th>
+            <th style="width:10%">方向</th>
+            <th style="width:18%">外部系統</th>
+            <th style="width:12%">格式／協定</th>
+            <th>說明</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>RSI Mission Timeline</strong></td>
+            <td><span class="tag tag--in">IN</span></td>
+            <td>PSS（影像計畫排程）</td>
+            <td>XML</td>
+            <td>RSI 任務時序表輸入，包含成像窗口、姿態需求、SSR 使用計畫</td>
+          </tr>
+          <tr>
+            <td><strong>RSI Acquisition Schedule Report</strong></td>
+            <td><span class="tag tag--out">OUT</span></td>
+            <td>PSS</td>
+            <td>XML</td>
+            <td>MCC 產出的解析排程報告，包含無衝突地面指令與上傳指令</td>
+          </tr>
+          <tr>
+            <td><strong>AIP Mission Timeline</strong></td>
+            <td><span class="tag tag--in">IN</span></td>
+            <td>AIP SDDC（資料發布）</td>
+            <td>XML</td>
+            <td>AIP 任務時序，包含播放計畫（Playback）與程序指令</td>
+          </tr>
+          <tr>
+            <td><strong>AIP Acquisition Schedule Report</strong></td>
+            <td><span class="tag tag--out">OUT</span></td>
+            <td>AIP SDDC</td>
+            <td>XML</td>
+            <td>AIP 排程確認報告，傳回可執行之排程結果</td>
+          </tr>
+          <tr>
+            <td><strong>AIP Command Procedures</strong></td>
+            <td><span class="tag tag--in">IN</span></td>
+            <td>AIP SDDC</td>
+            <td>XML</td>
+            <td>AIP 上行指令程序定義</td>
+          </tr>
+          <tr>
+            <td><strong>Programming Requests（PRs）</strong></td>
+            <td><span class="tag tag--in">IN</span></td>
+            <td>Customer / External</td>
+            <td>OGC SPS</td>
+            <td>客戶影像程序請求，遵循 OGC Sensor Planning Service 標準（EO Satellite Tasking Extension）</td>
+          </tr>
+          <tr>
+            <td><strong>Programming Proposals（PPs）</strong></td>
+            <td><span class="tag tag--out">OUT</span></td>
+            <td>Customer</td>
+            <td>OGC SPS</td>
+            <td>TOFA 評估後回傳的可行性建議書，供客戶確認</td>
+          </tr>
+          <tr>
+            <td><strong>Command Database（ARCOS）</strong></td>
+            <td><span class="tag tag--bi">I/O</span></td>
+            <td>MOC（任務操作中心）</td>
+            <td>DB Interface</td>
+            <td>MCC 驗證所產出指令載荷（Command Loads）時，需存取 MOC 的 ARCOS 指令資料庫</td>
+          </tr>
+          <tr>
+            <td><strong>Orbit Events / FDF Data</strong></td>
+            <td><span class="tag tag--in">IN</span></td>
+            <td>FDF（飛行動力設施）</td>
+            <td>File / API</td>
+            <td>軌道事件（AOS/LOS 時序、星曆資料）輸入，作為排程計算基礎</td>
+          </tr>
+          <tr>
+            <td><strong>Pass Plan / Resolved Schedule</strong></td>
+            <td><span class="tag tag--out">OUT</span></td>
+            <td>MOC / RTS</td>
+            <td>File / XML</td>
+            <td>每日至少一次產出，涵蓋下 24 小時的通訊過站計畫與衛星指令時序</td>
+          </tr>
+        </tbody>
+      </table>
+
+
+    </div>
+  </div><!-- end section 3 -->
+
+
+  <!-- ─────────────────────────────────────
+       SECTION 4：主要功能
+  ──────────────────────────────────────── -->
+  <div class="section">
+    <div class="section__header">
+      <span class="section__num">04</span>
+      <span class="section__title">主要功能（Key Functions）</span>
+      <span class="section__sub">PRM ／ TOFA ／ MPSS 三模組</span>
+    </div>
+    <div class="section__body">
+      <div class="func-grid">
+
+        <!-- PRM -->
+        <div class="func-card">
+          <div class="func-card__head func-card__head--lblue">
+            ◆ PRM — Programming Request Manager
+          </div>
+          <div class="func-card__body">
+            <ul class="blist blist--lblue">
+              <li>依循 <span class="kw">OGC SPS</span>（Sensor Planning Service）標準接收客戶影像程序請求</li>
+              <li>GetCapabilities：揭露服務能力後設資料</li>
+              <li>DescribeTasking：提供 Submit 所需參數說明</li>
+              <li>GetFeasibility：判斷請求是否可行</li>
+              <li>Submit：接受正式任務委託</li>
+              <li>DescribeResultAccess：指示資料取用路徑</li>
+              <li>GetSensorAvailability / SubmitSegmentByID（EO Satellite Tasking Extension）</li>
+              <li>採 RIA 前端（Rich Internet Application）供操作員使用</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- TOFA -->
+        <div class="func-card">
+          <div class="func-card__head func-card__head--orange">
+            ◆ TOFA — Tasking Order Feasibility Assessor
+          </div>
+          <div class="func-card__body">
+            <ul class="blist blist--orange">
+              <li>將 PRM 接收的 Programming Requests 轉換為 Tasking Orders（TOs）</li>
+              <li>評估 TO 的可行性（姿態限制、SSR 容量、過站窗口等）</li>
+              <li>產出 Programming Proposals（PPs）回傳客戶確認</li>
+              <li>與 FDF、MPSS、CWB 通訊取得評估所需資訊</li>
+              <li>採用 <span class="kw">Apache ServiceMix</span>（SOA 架構）協調多服務工作流程：</li>
+            </ul>
+            <ul class="blist blist--navy" style="margin-top:4px;margin-left:12px;">
+              <li>ActiveMQ：可靠訊息傳遞</li>
+              <li>Apache Camel：訊息路由 / EIP</li>
+              <li>Apache CXF：WS-* / RESTful 服務</li>
+              <li>Apache ODE：WS-BPEL 業務流程引擎</li>
+              <li>Apache Karaf：OSGi 伺服器執行期</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- MPSS -->
+        <div class="func-card">
+          <div class="func-card__head func-card__head--navy">
+            ◆ MPSS — Mission Planning and Scheduling Subsystem
+          </div>
+          <div class="func-card__body">
+            <ul class="blist blist--navy">
+              <li>建立短、長期任務排程（短期：24hr；長期：7天以上）</li>
+              <li><strong>Session Management</strong>：工作階段與 Branch 管理，支援排程版本分支</li>
+              <li><strong>Activity Request List Editor</strong>：編輯與管理活動請求清單</li>
+              <li><strong>Cold Scheduling</strong>：自動排程初始產生</li>
+              <li><strong>External Activity Request Scheduler（EARS）</strong>：接收 Mission Timeline 並排入</li>
+              <li><strong>Gantt Chart（Hot Scheduling）</strong>：視覺化排程甘特圖與手動調整</li>
+              <li><strong>Schedule Validator</strong>：規則驗證（SSR 容量、Duty Cycle、S-Band 傳輸機等）</li>
+              <li><strong>Schedule Report Generator</strong>：RSI/AIP Acquisition Schedule、SSR/Duty Cycle 報告</li>
+              <li>基於 <span class="kw">NASA EUROPA</span> Planning &amp; Scheduling Framework</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Scheduling Rules -->
+        <div class="func-card">
+          <div class="func-card__head func-card__head--green">
+            ◆ 排程規則引擎（FORMOSAT-5）
+          </div>
+          <div class="func-card__body">
+            <ul class="blist blist--green">
+              <li><strong>FS5 活動類型（12 種）：</strong></li>
+            </ul>
+            <ul class="blist blist--navy" style="margin-left:12px;margin-top:2px;">
+              <li>RSI Imaging（遙感成像）/ RSI Playback / RSI DDT</li>
+              <li>AIP Playback / AIP Procedure</li>
+              <li>Spacecraft Maneuver（姿態機動）</li>
+              <li>Real-Time Command / Miscellaneous Memory</li>
+              <li>Uplink / X-Band Crossover / Monitoring（SOH）</li>
+            </ul>
+            <ul class="blist blist--green" style="margin-top:8px;">
+              <li><strong>資源排程規則：</strong></li>
+            </ul>
+            <ul class="blist blist--navy" style="margin-left:12px;margin-top:2px;">
+              <li>SSR（固態記錄器）容量與讀寫規則</li>
+              <li>Duty Cycle 限制（成像工作比）</li>
+              <li>S-Band 傳輸機互斥規則</li>
+              <li>X-Band / S-Band 過站接觸規則</li>
+              <li>Branch 合併規則（Branch Merging）</li>
+              <li>衛星 / 地面站資源 Parameter Set 管理</li>
+            </ul>
+          </div>
+        </div>
+
+      </div><!-- end func-grid -->
+    </div>
+  </div><!-- end section 4 -->
+
+
+  <!-- ─────────────────────────────────────
+       SECTION 5：技術重點摘要
+  ──────────────────────────────────────── -->
+  <div class="section">
+    <div class="section__header">
+      <span class="section__num">05</span>
+      <span class="section__title">技術重點摘要（Technical Highlights）</span>
+      <span class="section__sub">開發語言 ／ 框架 ／ 資料庫 ／ 安全性</span>
+    </div>
+    <div class="section__body">
+      <div class="tech-grid">
+
+        <div class="tech-item tech-item--navy">
+          <div class="tech-item__name">NASA EUROPA</div>
+          <div class="tech-item__desc">
+            MPSS 核心規劃排程框架。Plan Database（活動/狀態/物件/約束）+ Problem Solver（自動修復計畫缺陷）+ Declarative Modeling Language（NDDL）。表達力強、可延伸、配置彈性高。
+          </div>
+        </div>
+
+        <div class="tech-item tech-item--lblue">
+          <div class="tech-item__name">Apache ServiceMix（SOA）</div>
+          <div class="tech-item__desc">
+            TOFA 採用服務導向架構，以 ServiceMix 整合 ActiveMQ（訊息佇列）、Camel（路由）、CXF（WS/REST）、ODE（BPEL 流程）、Karaf（OSGi 執行期），確保服務間鬆耦合與可靠訊息傳遞。
+          </div>
+        </div>
+
+        <div class="tech-item tech-item--green">
+          <div class="tech-item__name">PostgreSQL + PostGIS</div>
+          <div class="tech-item__desc">
+            企業級開源關聯式資料庫（PostgreSQL），搭配地理資訊擴充（PostGIS）支援衛星覆蓋區域計算、影像收集範圍的空間查詢與地理運算。支援 Linux / Windows / Mac 跨平台部署。
+          </div>
+        </div>
+
+        <div class="tech-item tech-item--orange">
+          <div class="tech-item__name">OGC SPS 標準介面</div>
+          <div class="tech-item__desc">
+            PRM 遵循 OGC Sensor Planning Service（SPS）國際標準，提供標準化感測器規劃請求介面，並實作 Earth Observation Satellite Tasking Extension，確保與外部系統的互操作性。
+          </div>
+        </div>
+
+        <div class="tech-item tech-item--red">
+          <div class="tech-item__name">安全機制</div>
+          <div class="tech-item__desc">
+            <strong>SSL</strong>：所有通訊加密傳輸。<br>
+            <strong>Authentication &amp; Authorization</strong>：使用者身份驗證與存取控制，確保只有授權人員可操作排程系統。
+          </div>
+        </div>
+
+        <div class="tech-item tech-item--navy">
+          <div class="tech-item__name">Java 套件架構</div>
+          <div class="tech-item__desc">
+            MPSS 分層套件設計：<br>
+            <strong>mpss.jpa</strong>（JPA 持久層）、<strong>mpss.dao</strong>（資料存取）、<strong>mpss.ac</strong>（活動控制）、<strong>mpss.oe</strong>（軌道事件）、<strong>mpss.mtl</strong>（Mission Timeline）、<strong>mpss.resources</strong>（資源管理）、<strong>mpss.plan</strong>（計畫管理）、<strong>mpss.sched</strong>（排程引擎）。
+          </div>
+        </div>
+
+        <div class="tech-item tech-item--lblue">
+          <div class="tech-item__name">Rich Internet Application（RIA）</div>
+          <div class="tech-item__desc">
+            前端採用 RIA 架構，提供桌面應用程式等級的操作體驗（Gantt Chart 視覺化、Activity Request 編輯器、Session 管理），在瀏覽器中執行，降低客戶端部署成本。
+          </div>
+        </div>
+
+        <div class="tech-item tech-item--green">
+          <div class="tech-item__name">平台與開發語言</div>
+          <div class="tech-item__desc">
+            <strong>平台</strong>：跨平台（Linux / Windows）<br>
+            <strong>語言</strong>：Java（主要後端）<br>
+            <strong>資料庫</strong>：PostgreSQL + PostGIS<br>
+            <strong>服務框架</strong>：Apache ServiceMix（OSGi）
+          </div>
+        </div>
+
+        <div class="tech-item tech-item--orange">
+          <div class="tech-item__name">資料保護與高可用性</div>
+          <div class="tech-item__desc">
+            SAN 儲存提供 RAID 6 冗餘、Hot Swap 熱插換、資料快照（Snapshot / FlashCopy）與磁碟陣列複製功能，確保排程資料損毀時可快速回復（RTO 最小化）。
+          </div>
+        </div>
+
+      </div><!-- end tech-grid -->
+    </div>
+  </div><!-- end section 5 -->
+
+</div><!-- end container -->
+
+<!-- ══════════════════════════════════════
+     FOOTER
+════════════════════════════════════════ -->
+<footer class="page-footer">
+  國家太空中心（TASA）｜衛星多重任務及星系操作系統整合軟體（MCC）
+  ｜計畫編號 TASA-P-101080 ｜承攬 Advanced Control and Systems, Inc.（ACS）
+  ｜本文件依據 CDRL-017/018/019/021（最終版）彙整
+</footer>
+
+</body>
+</html>
